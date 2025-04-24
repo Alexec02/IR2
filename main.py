@@ -8,6 +8,7 @@ from actuation import move_forward, turn_left, turn_right
 from behavior import wall_avoidance, obstacle_avoidance
 from world_test import move_yellow_to_corner, reset_if_needed
 from robobopy.Robobo import Robobo
+from robobosim.RoboboSim import RoboboSim
 
 DATASET_FILE = "world_model_dataset.csv"
 ACTIONS = ["forward", "left", "right"]
@@ -34,16 +35,20 @@ def log_to_dataset(p_before, action, p_after):
 def main_loop():
     rob = Robobo("localhost")
     rob.connect()
+    sim = RoboboSim("localhost")
+    sim.connect()
 
-    move_yellow_to_corner(rob)
+    move_yellow_to_corner(sim)
 
     while True:
-        #reset_if_needed(rob)
+        reset_if_needed(rob,sim)
 
         if wall_avoidance(rob):
-            continue
+            print("Wall detected")
+            time.sleep(1)
         if obstacle_avoidance(rob):
-            continue
+            print("Obstacle detected")
+            time.sleep(1)
 
         # --- Perception before action ---
         p_before = get_perception(rob)

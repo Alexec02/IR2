@@ -15,6 +15,3 @@ def turn_left(rob):
 def turn_right(rob):
     rob.moveWheelsByTime(TURN_SPEED, -TURN_SPEED, MOVE_DURATION)
 
-def stop(rob):
-    rob.moveWheelsByTime(0, 0, MOVE_DURATION)
-
