@@ -1,69 +1,58 @@
 # main.py
-import csv
-import os
-import time
-import random
-from perception import get_perception
-from actuation import move_forward, turn_left, turn_right
-from behavior import wall_avoidance, obstacle_avoidance
-from world_test import move_yellow_to_corner, reset_if_needed
 from robobopy.Robobo import Robobo
 from robobosim.RoboboSim import RoboboSim
+import numpy as np
+from robot_actions import RobotActions
+from data_utils import save_data
+from world_model import WorldModel
+from intrinsic_utility import IntrinsicUtility
+from extrinsic_utility import ExtrinsicUtility
 
-DATASET_FILE = "world_model_dataset.csv"
-ACTIONS = ["forward", "left", "right"]
+def collect_data(robobo, sim, num_samples=50):
+    actions = []
+    perceptions = []
 
-ACTION_FUNCTIONS = {
-    "forward": move_forward,
-    "left": turn_left,
-    "right": turn_right
-}
+    robot_actions = RobotActions(robobo)
+    for _ in range(num_samples):
+        action = np.random.choice([-90, -45, 0, 45, 90])
+        robot_actions.execute_action(action)
 
-def log_to_dataset(p_before, action, p_after):
-    file_exists = os.path.isfile(DATASET_FILE)
+        perception = [
+            sim.get_distance_to_object("red"),
+            sim.get_distance_to_object("green"),
+            sim.get_distance_to_object("blue")
+        ]
 
-    with open(DATASET_FILE, mode='a', newline='') as file:
-        writer = csv.writer(file)
+        actions.append([action])
+        perceptions.append(perception)
 
-        if not file_exists:
-            headers = list(p_before.keys()) + ['action'] + [f"{k}_next" for k in p_after.keys()]
-            writer.writerow(headers)
+    save_data("robot_data.npz", actions, perceptions)
+    print("Data collection completed.")
 
-        row = list(p_before.values()) + [action] + list(p_after.values())
-        writer.writerow(row)
-
-def main_loop():
-    rob = Robobo("localhost")
-    rob.connect()
+def main():
+    robobo = Robobo("localhost")
     sim = RoboboSim("localhost")
-    sim.connect()
 
-    move_yellow_to_corner(sim)
+    collect_data(robobo, sim)
 
-    while True:
-        reset_if_needed(rob,sim)
+    actions, perceptions = np.array(actions), np.array(perceptions)
 
-        if wall_avoidance(rob):
-            print("Wall detected")
-            time.sleep(1)
-        if obstacle_avoidance(rob):
-            print("Obstacle detected")
-            time.sleep(1)
+    # Train World Model
+    wm = WorldModel()
+    wm.train(actions, perceptions)
 
-        # --- Perception before action ---
-        p_before = get_perception(rob)
+    # Intrinsic Utility setup
+    # intrinsic_util = IntrinsicUtility(memory_states=perceptions)
 
-        # --- Random action ---
-        action = random.choice(ACTIONS)
-        ACTION_FUNCTIONS[action](rob)
-        time.sleep(0.6)
+    # Example of evaluating intrinsic utility
+    # action_example = [45]
+    # predicted_state = wm.predict(action_example)
+    # novelty_score = intrinsic_util.calculate_novelty(predicted_state)
+    # print("Novelty Score for action", action_example, ":", novelty_score)
 
-        # --- Perception after action ---
-        p_after = get_perception(rob)
-
-        # --- Log step ---
-        log_to_dataset(p_before, action, p_after)
-        print("Logged:", action, p_before, "->", p_after)
+    # Placeholder for extrinsic utility training once goal is discovered
+    # extrinsic_util = ExtrinsicUtility()
+    # extrinsic_util.train(goal_states, utilities)
 
 if __name__ == "__main__":
-    main_loop()
+    main()
