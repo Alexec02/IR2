@@ -2,54 +2,68 @@
 import random
 from robobopy.utils.IR import IR
 from robobopy import Robobo
-from actuation import turn_left, turn_right
+from actuation import move
+from perception import get_perception, getDistance
+from world_test import get_safe_random_location
 
-PROX_THRESHOLD = 60
 
-def wall_avoidance(rob):
-    # Read proximity sensors using robobopy
-    sensors = {
-        'BackR': rob.readIRSensor(IR.BackR),
-        'BackC': rob.readIRSensor(IR.BackC),
-        'FrontR': rob.readIRSensor(IR.FrontR),
-        'FrontRR': rob.readIRSensor(IR.FrontRR),
-        'FrontC': rob.readIRSensor(IR.FrontC),
-        'FrontL': rob.readIRSensor(IR.FrontL),
-        'FrontLL': rob.readIRSensor(IR.FrontLL),
-        'BackL': rob.readIRSensor(IR.BackL),
-    }
+PROX_THRESHOLD = 30
 
+def wall_avoidance(sim,rob):
+    
+    wall=True
+    count=0
     # Wall avoidance based on proximity to walls (through IR sensors)
-    if sensors['FrontL'] > PROX_THRESHOLD or sensors['FrontLL'] > PROX_THRESHOLD:
-        print("Wall on left - turning right")
-        turn_right(rob)
-        return True
-    elif sensors['FrontR'] > PROX_THRESHOLD or sensors['FrontRR'] > PROX_THRESHOLD:
-        print("Wall on right - turning left")
-        turn_left(rob)
-        return True
-    elif sensors['BackR'] > PROX_THRESHOLD:
-        print("Wall on back right - turning left")
-        turn_left(rob)
-        return True
-    elif sensors['BackL'] > PROX_THRESHOLD:
-        print("Wall on back left - turning right")
-        turn_right(rob)
-        return True
-        
+    while wall:
+        #avoid stucked position
+        if count==5:
+            sim.setRobotLocation(0,get_safe_random_location(sim), {'x': 0.0, 'y': 0.0, 'z': 0.0})
 
-    return False
 
-def obstacle_avoidance(rob):
-    # Check for obstacles ahead using the front IR sensor
-    front = rob.readIRSensor(IR.FrontC)
-
-    if front > PROX_THRESHOLD:
-        # Randomly choose to turn left or right to avoid the obstacle
-        if random.random() < 0.5:
-            turn_left(rob)
+        # Read proximity sensors using robobopy
+        sensors = {
+            'BackR': rob.readIRSensor(IR.BackR),
+            'BackC': rob.readIRSensor(IR.BackC),
+            'FrontR': rob.readIRSensor(IR.FrontR),
+            'FrontRR': rob.readIRSensor(IR.FrontRR),
+            'FrontC': rob.readIRSensor(IR.FrontC),
+            'FrontL': rob.readIRSensor(IR.FrontL),
+            'FrontLL': rob.readIRSensor(IR.FrontLL),
+            'BackL': rob.readIRSensor(IR.BackL),
+        }
+        #print(sensors)
+        #FORNTL;FRONTR;BACKC always 57
+        if  (sensors['FrontLL'] ) > PROX_THRESHOLD and sensors['FrontRR'] > PROX_THRESHOLD:
+            print("Corner - turn right")
+            move(rob,-20,20)
+        elif (sensors['FrontLL'] ) > PROX_THRESHOLD:
+            print("Wall on left - turning right")
+            move(rob,-20,20)
+        elif sensors['FrontRR'] > PROX_THRESHOLD:
+            print("Wall on right - turning left")
+            move(rob,20,-20)
+        elif max(sensors['BackR'],sensors['BackL']) > 60:
+            if obstacle_avoidance(sim,rob):
+                print("Wall on back, obstacle in front - turning right")
+            else:
+                print("Wall on back  - Forward")
+                move(rob,30,30)
         else:
-            turn_right(rob)
-        return True
+            wall=False
 
-    return False
+        if wall:
+            print(sensors)
+
+        count += 1
+        
+def obstacle_avoidance(sim,rob,threshold=330):
+    blobs=get_perception(rob)["blobs"]
+    distances=getDistance(sim)
+    detected=False
+    
+    for x,obj in enumerate(['red','blue','green']):
+        if distances[x]<=threshold and blobs[obj]["seen"] and blobs[obj]["size"]>=70:
+            move(rob,-20,20)
+            detected=True
+            print("obstacle")
+    return detected

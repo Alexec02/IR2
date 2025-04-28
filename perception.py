@@ -32,9 +32,19 @@ def get_perception(rob):
     red_blob = read_blob(BlobColor.RED)
     green_blob = read_blob(BlobColor.GREEN)
     blue_blob = read_blob(BlobColor.BLUE)
-
+    
     # Return all sensor data including proximity and blob color information
     return {
         'proximity': sensors,
-        'blobs': {'red': red_blob, 'green': green_blob, 'blue': blue_blob}
+        'blobs': {'red': red_blob, 'blue': blue_blob, 'green': green_blob}
     }
+
+def getDistance(sim):
+    robot=sim.getRobotLocation(0)['position']
+    dist=[]
+
+    for obj in ['REDCYLINDER','BLUECYLINDER','GREENCYLINDER']:
+        pos=sim.getObjectLocation(obj)['position']
+        dist.append( ( (robot['x']-pos['x'])**2 + (robot['z']-pos['z'])**2 )**0.5 )
+
+    return dist

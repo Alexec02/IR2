@@ -3,21 +3,17 @@ import csv
 import os
 import time
 import random
-from perception import get_perception
-from actuation import move_forward, turn_left, turn_right
+from perception import getDistance
+from actuation import move
 from behavior import wall_avoidance, obstacle_avoidance
 from world_test import move_yellow_to_corner, reset_if_needed
 from robobopy.Robobo import Robobo
 from robobosim.RoboboSim import RoboboSim
 
 DATASET_FILE = "world_model_dataset.csv"
-ACTIONS = ["forward", "left", "right"]
+#ACTIONS = [-90,-45,0,45,90] # i tried discretized using motors (really difficult), does the statement mean using sim.setRobotLocation()????
 
-ACTION_FUNCTIONS = {
-    "forward": move_forward,
-    "left": turn_left,
-    "right": turn_right
-}
+
 
 def log_to_dataset(p_before, action, p_after):
     file_exists = os.path.isfile(DATASET_FILE)
@@ -25,45 +21,45 @@ def log_to_dataset(p_before, action, p_after):
     with open(DATASET_FILE, mode='a', newline='') as file:
         writer = csv.writer(file)
 
-        if not file_exists:
-            headers = list(p_before.keys()) + ['action'] + [f"{k}_next" for k in p_after.keys()]
-            writer.writerow(headers)
-
-        row = list(p_before.values()) + [action] + list(p_after.values())
+        row = [p_before] + [action] + [p_after]
         writer.writerow(row)
 
-def main_loop():
+def main_loop(sim,rob):
+    while True:
+        reset_if_needed(rob,sim)
+        wall_avoidance(sim,rob)
+        obstacle_avoidance(sim,rob)
+        # --- Perception before action ---
+        p_before = getDistance(sim)
+
+        # --- Random action ---
+        #action = random.choice(ACTIONS)
+        #For creating continuos movement we select different velocity for each wheel
+        sign=[-1,1]
+        sign1=sign[random.randint(0,1)]
+        sign2=sign[random.randint(0,1)]
+
+        vel1 = random.random()*30#*sign1
+        vel2 = random.random()*30#*sign2
+        action=[vel1,vel2]
+        move(rob, vel1, vel2)
+        
+        # --- Perception after action ---
+        p_after = getDistance(sim)
+        
+        # --- Log step ---
+        log_to_dataset(p_before, action, p_after)
+        #print("Logged:", action, p_before, "->", p_after)
+
+if __name__ == "__main__":
     rob = Robobo("localhost")
     rob.connect()
     sim = RoboboSim("localhost")
     sim.connect()
-
+    time.sleep(1)
+    rob.moveTiltTo(90,5)
     move_yellow_to_corner(sim)
+    main_loop(sim,rob)
+    
+    
 
-    while True:
-        reset_if_needed(rob,sim)
-
-        if wall_avoidance(rob):
-            print("Wall detected")
-            time.sleep(1)
-        if obstacle_avoidance(rob):
-            print("Obstacle detected")
-            time.sleep(1)
-
-        # --- Perception before action ---
-        p_before = get_perception(rob)
-
-        # --- Random action ---
-        action = random.choice(ACTIONS)
-        ACTION_FUNCTIONS[action](rob)
-        time.sleep(0.6)
-
-        # --- Perception after action ---
-        p_after = get_perception(rob)
-
-        # --- Log step ---
-        log_to_dataset(p_before, action, p_after)
-        print("Logged:", action, p_before, "->", p_after)
-
-if __name__ == "__main__":
-    main_loop()
