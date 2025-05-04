@@ -1,0 +1,64 @@
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.models import load_model
+
+# Load the trained world model
+world_model = load_model("modelo.h5")
+
+class IntrinsicUtilityModel:
+    def __init__(self, n=2):
+        self.traces_memory = []
+        self.n = n
+
+    def add_to_memory(self, state):
+        self.traces_memory.append(np.array(state))
+
+    def compute_novelty(self, candidate_states):
+        if not self.traces_memory:
+            return [float('inf')] * len(candidate_states)
+
+        novelty_scores = []
+        for sc_k in candidate_states:
+            distances = [np.linalg.norm(np.array(sc_k) - si)**self.n for si in self.traces_memory]
+            avg_distance = np.mean(distances)
+            novelty = 1 / (avg_distance + 1e-8)
+            novelty_scores.append(novelty)
+        return novelty_scores
+
+
+def generate_candidate_actions(num_candidates=20):
+    """
+    Sample random continuous motor actions in range [0, 20].
+    """
+    return [np.random.uniform(0, 20, size=2) for _ in range(num_candidates)]
+
+
+def predict_next_state(world_model, current_state, action):
+    """
+    Predict next state using the trained world model.
+    Input: current_state + action as a flat array.
+    """
+    input_data = np.concatenate([current_state, action])[np.newaxis, :]  # Shape (1, 5)
+    predicted_state = world_model.predict(input_data, verbose=0)[0]     # Output shape (3,)
+    return predicted_state
+
+
+def intrinsic_action_selection(current_state, intrinsic_model, world_model, num_candidates=20):
+    candidate_actions = generate_candidate_actions(num_candidates)
+    candidate_states = [predict_next_state(world_model, current_state, a) for a in candidate_actions]
+    novelty_scores = intrinsic_model.compute_novelty(candidate_states)
+
+    best_idx = np.argmax(novelty_scores)
+    return candidate_actions[best_idx], candidate_states[best_idx], novelty_scores[best_idx]
+
+
+# ---- loop ----
+
+intrinsic_model = IntrinsicUtilityModel(n=2)
+current_state = np.zeros(3)  # Initial dummy state
+
+for step in range(15):
+    action, predicted_state, novelty = intrinsic_action_selection(current_state, intrinsic_model, world_model)
+    print(f"Step {step} - Action: {action}, Predicted State: {predicted_state}, Novelty: {novelty:.4f}")
+    current_state = predicted_state
+    intrinsic_model.add_to_memory(current_state)
