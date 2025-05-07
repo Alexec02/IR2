@@ -16,7 +16,6 @@ DATASET_FILE = "world_model_dataset.csv"
 
 
 def log_to_dataset(p_before, action, p_after):
-    file_exists = os.path.isfile(DATASET_FILE)
 
     with open(DATASET_FILE, mode='a', newline='') as file:
         writer = csv.writer(file)

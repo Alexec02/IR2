@@ -45,6 +45,7 @@ def wall_avoidance(sim,rob):
         elif max(sensors['BackR'],sensors['BackL']) > 60:
             if obstacle_avoidance(sim,rob):
                 print("Wall on back, obstacle in front - turning right")
+                move(rob,-20,20)
             else:
                 print("Wall on back  - Forward")
                 move(rob,30,30)
@@ -63,7 +64,9 @@ def obstacle_avoidance(sim,rob,threshold=330):
     
     for x,obj in enumerate(['red','blue','green']):
         if distances[x]<=threshold and blobs[obj]["seen"] and blobs[obj]["size"]>=70:
-            move(rob,-20,20)
+            if obj!='red':
+                move(rob,-20,20)
+                print("obstacle")
+            
             detected=True
-            print("obstacle")
     return detected

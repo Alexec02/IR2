@@ -11,6 +11,9 @@ rob = Robobo("localhost")
 rob.connect()
 sim = RoboboSim("localhost")
 sim.connect()
+print(sim.getObjectLocation("GREENCYLINDER"))
+print(sim.getObjectLocation("BLUECYLINDER"))
+print(sim.getObjectLocation("REDCYLINDER"))
 
 sim.setRobotLocation(0,{'x': -750.0, 'y': 10.0, 'z': 750.0}, {'x': 0.0, 'y': 0.0, 'z': 0.0})
 """pos_ori = sim.getRobotLocation(0)["rotation"]["y"]

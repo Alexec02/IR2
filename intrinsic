@@ -62,3 +62,6 @@ for step in range(15):
     print(f"Step {step} - Action: {action}, Predicted State: {predicted_state}, Novelty: {novelty:.4f}")
     current_state = predicted_state
     intrinsic_model.add_to_memory(current_state)
+
+### Rmember for testing with simulator, the current state needs to be
+### extracted from world and normalized using the dataset.
