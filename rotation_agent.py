@@ -193,9 +193,10 @@ def main_loop(sim, rob):
         # Update state and trace
         current_state = getDistance(sim)
         current_rotation = getRotation(sim)[1]
+        norm_state = scaler_pos_before.transform([current_state])[0]
         
         #print("Difference in prediction: "+current_state-scaler_state.inverse_transform([predicted_states[best_idx]]))
-        memory.append(current_state)
+        memory.append(norm_state)
         if len(memory) > 15:
             memory.pop(0)  # Keep memory length to 10
 
@@ -228,6 +229,7 @@ def main_loop(sim, rob):
 
             trace = []   # Clear episode trace
             memory = []  # Reset novelty memory for new exploration
+            trace_memory = [] #Reset because data has been saved
 
 
         

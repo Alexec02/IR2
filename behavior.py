@@ -17,8 +17,8 @@ def wall_avoidance(sim,rob):
     while wall:
         #avoid stucked position
         if count==5:
-            sim.setRobotLocation(0,get_safe_random_location(sim), {'x': 0.0, 'y': 0.0, 'z': 0.0})
-
+            #sim.setRobotLocation(0,get_safe_random_location(sim), {'x': 0.0, 'y': 0.0, 'z': 0.0})
+            move(rob,-30,-30)
 
         # Read proximity sensors using robobopy
         sensors = {
