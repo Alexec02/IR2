@@ -48,7 +48,7 @@ rotation_scaled = scaler_rotation.fit_transform(rotation_array)
 action_scaled = scaler_action.fit_transform(action_array)
 
 # Concatenar entrada
-X = np.hstack([state_scaled, rotation_scaled, action_scaled])
+X = np.hstack([state_scaled, rotation_scaled])#, action_scaled])
 y = utility_array
 
 # Dividir datos
@@ -62,6 +62,8 @@ model = keras.models.Sequential([
     layers.Dense(128, activation='relu'),
     layers.Dense(64, activation='relu'),
     layers.Dense(32, activation='relu'),
+    layers.Dense(16, activation='relu'),
+    layers.Dense(8, activation='relu'),
     layers.Dense(1)
 ])
 

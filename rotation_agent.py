@@ -163,6 +163,7 @@ def main_loop(sim, rob):
         for action in candidate_actions:
             norm_action = scaler_actions.transform([action])[0]
             model_input = np.concatenate([norm_state, norm_rot, norm_action]).reshape(1, -1)
+            print(model_input)
             pred_next_state = model.predict(model_input, verbose=0)[0]
 
             predicted_states.append(pred_next_state[:3])
@@ -218,7 +219,7 @@ def main_loop(sim, rob):
             print(trace_memory)
             # save trace data
             df = pd.DataFrame([
-                {"state": s, "rotation": r, "action": a, "utility": u}
+                {"state": s, "rotation": r, "action": a.tolist(), "utility": u}
                 for s, r, a, u in trace_memory
             ])
 

@@ -13,7 +13,11 @@ from world_test import move_yellow_to_corner, reset_if_needed, reached_red
 from robobopy.Robobo import Robobo
 from robobosim.RoboboSim import RoboboSim
 
-def sample_actions():
+def sample_actions(n=10):
+    return [np.array([np.random.uniform(10, 20), np.random.uniform(10, 20)]) for _ in range(n)]
+
+
+"""def sample_actions():
     actions = []
 
     # Avance recto
@@ -43,7 +47,7 @@ def sample_actions():
         else:
             actions.append(np.array([fast, slow]))
 
-    return actions
+    return actions"""
 
 def main_loop(sim, rob):
     # Load rotation_memory.csv
@@ -86,7 +90,9 @@ def main_loop(sim, rob):
     action_scaled = scaler_action.fit_transform(action_array)
 
     # Load trained utility model
-    model = load_model("utility_model.h5")
+    utility_model = load_model("utility_model.h5")
+    # Load trained model
+    model = load_model("model_rotation.h5")
     step = 0
 
     while True:
@@ -107,7 +113,10 @@ def main_loop(sim, rob):
         for action in candidate_actions:
             norm_action = scaler_action.transform([action])[0]
             model_input = np.concatenate([norm_state, norm_rot, norm_action]).reshape(1, -1)
-            predicted_utility = model.predict(model_input, verbose=0)[0][0]
+            pred_state = model.predict(model_input,verbose=0)[0]
+            
+            model_input = np.concatenate([pred_state]).reshape(1, -1)#, norm_rot, norm_action]).reshape(1, -1)
+            predicted_utility = utility_model.predict(model_input, verbose=0)[0][0]
             utility_predictions.append(predicted_utility)
 
         best_idx = np.argmax(utility_predictions)
