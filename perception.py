@@ -48,3 +48,6 @@ def getDistance(sim):
         dist.append( ( (robot['x']-pos['x'])**2 + (robot['z']-pos['z'])**2 )**0.5 )
 
     return dist
+
+def getRotation(sim):
+    return [sim.getRobotLocation(0)['rotation']["x"], sim.getRobotLocation(0)['rotation']["y"], sim.getRobotLocation(0)['rotation']["z"]]
