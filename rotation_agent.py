@@ -12,6 +12,7 @@ from behavior import wall_avoidance, obstacle_avoidance
 from world_test import move_yellow_to_corner, reset_if_needed, reached_red
 from robobopy.Robobo import Robobo
 from robobosim.RoboboSim import RoboboSim
+from keras.src.legacy.saving import legacy_h5_format
 
 def compute_novelty(candidate_state, memory_states, n=2):
     """
@@ -31,49 +32,53 @@ def compute_novelty(candidate_state, memory_states, n=2):
 
 # Define action space (motor1, motor2) range from 0–20
 """def sample_actions(n=10):
-    return [np.array([np.random.uniform(0, 20), np.random.uniform(0, 20)]) for _ in range(n)]
+    actions = [np.array([np.random.uniform(0, 20), np.random.uniform(0, 20)]) for _ in range(n)]
+
+    #for _ in range(2):
+    #    speed = np.random.uniform(10, 20)
+    #    variation = np.random.uniform(-1, 1)
+    #    actions.append(np.array([speed, speed + variation]))
+
+    return actions
 """
 
 def sample_actions():
     actions = []
 
     # Avance recto: motores similares
-    for _ in range(3):
+    for _ in range(1):
         speed = np.random.uniform(10, 20)
         variation = np.random.uniform(-1, 1)
         actions.append(np.array([speed, speed + variation]))
 
     # Giro suave hacia un lado
-    for _ in range(3):
+    for _ in range(1):
         left = np.random.uniform(10, 15)
         right = left + np.random.uniform(2, 5)
         actions.append(np.array([left, right]))
 
     # Giro suave hacia el otro lado
-    for _ in range(3):
+    for _ in range(1):
         right = np.random.uniform(10, 15)
         left = right + np.random.uniform(2, 5)
         actions.append(np.array([left, right]))
 
-    # Giro brusco (uno muy lento)
-    for _ in range(3):
+    """# Giro brusco (uno muy lento)
+    for _ in range(1):
         slow = np.random.uniform(0, 5)
         fast = np.random.uniform(15, 20)
-        if np.random.rand() < 0.5:
-            actions.append(np.array([slow, fast]))
-        else:
-            actions.append(np.array([fast, slow]))
+        actions.append(np.array([slow, fast]))
+        actions.append(np.array([fast, slow]))"""
 
     # Agregar algo de ruido totalmente aleatorio (exploración)
-    #for _ in range(8):
-    #    actions.append(np.array([np.random.uniform(0, 20), np.random.uniform(0, 20)]))
+    for _ in range(4):
+        actions.append(np.array([np.random.uniform(0, 20), np.random.uniform(0, 20)]))
 
     return actions
 
 def main_loop(sim, rob):
     # Load dataset to fit normalizers
     data = pd.read_csv('world_model_dataset_rotation.csv', header=None, on_bad_lines='skip')
-    print(data.columns)
 
     # Inicializar listas
     pos_before_list, rot_before_list, actions_list = [], [], []
@@ -112,13 +117,6 @@ def main_loop(sim, rob):
     pos_after = np.array(pos_after_list)
     rot_after = np.array(rot_after_list)
 
-    # Verificar formas antes de escalar
-    print("Shapes:")
-    print("pos_before:", pos_before.shape)
-    print("rot_before:", rot_before.shape)
-    print("actions:", actions.shape)
-    print("pos_after:", pos_after.shape)
-    print("rot_after:", rot_after.shape)
 
     # Escaladores por separado
     scaler_pos_before = MinMaxScaler()
@@ -134,7 +132,7 @@ def main_loop(sim, rob):
     rot_after_scaled = scaler_rot_after.fit_transform(rot_after)
 
     # Load trained model
-    model = load_model("model_rotation.h5")
+    model = legacy_h5_format.load_model_from_hdf5("model_rotation.h5", custom_objects={'mse': 'mse'})
 
     memory = []          # For novelty calculation
     trace = []           # Current episode trace
@@ -163,10 +161,12 @@ def main_loop(sim, rob):
         for action in candidate_actions:
             norm_action = scaler_actions.transform([action])[0]
             model_input = np.concatenate([norm_state, norm_rot, norm_action]).reshape(1, -1)
-            print(model_input)
+            #print(model_input)
             pred_next_state = model.predict(model_input, verbose=0)[0]
 
             predicted_states.append(pred_next_state[:3])
+            
+            predicted_rotations.append(pred_next_state[3:])
             #print(pred_next_state[:4])
             # Check if the predicted state would reach the goal
             simulated_state = scaler_pos_after.inverse_transform([pred_next_state[:3]])[0]
@@ -185,6 +185,7 @@ def main_loop(sim, rob):
         else:
             # No immediate goal found, select based on novelty
             novelty_scores = [compute_novelty(s, memory) for s in predicted_states]
+            #print(novelty_scores)
             best_idx = np.argmax(novelty_scores)
             selected_action = candidate_actions[best_idx]
             print(f"Step {step} - Best novelty score: {novelty_scores[best_idx]:.4f}")
@@ -195,6 +196,10 @@ def main_loop(sim, rob):
         current_state = getDistance(sim)
         current_rotation = getRotation(sim)[1]
         norm_state = scaler_pos_before.transform([current_state])[0]
+        state = current_state+[current_rotation]
+        #print(state)
+        #print(scaler_pos_after.inverse_transform([predicted_states[best_idx]])[0])
+        #print(scaler_rot_after.inverse_transform([predicted_rotations[best_idx]])[0])
         
         #print("Difference in prediction: "+current_state-scaler_state.inverse_transform([predicted_states[best_idx]]))
         memory.append(norm_state)

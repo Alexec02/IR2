@@ -25,12 +25,12 @@ def get_safe_random_location(sim, buffer=100, min_dist=130):
 
     raise Exception("Couldn't find a safe location after 100 tries.")
 
-def reached_red(perception, distance, size_threshold=100, distance_threshold=200):
+def reached_red(perception, distance, size_threshold=100, distance_threshold=300):
     red_blob = perception['blobs']['red']
     sensor = perception['proximity']['FrontC']
     
     #check if the red blob is detected in the middle of the image
-    if red_blob['seen'] and (red_blob["x"]>45 or red_blob["x"]<55):
+    if red_blob['seen'] and (red_blob["x"]>40 or red_blob["x"]<50):
         # Check if its size exceeds the threshold
         if red_blob['size'] >= size_threshold and (distance <= distance_threshold or sensor>30):
             print(f"Red blob reached! (size: {red_blob['size']}, position: {red_blob['x']}, distance: {distance})")
@@ -54,7 +54,7 @@ def reset_if_needed(rob,sim):
         print("Red goal reached!")
         sim.setRobotLocation(0,get_safe_random_location(sim), {'x': 0.0, 'y': 0.0, 'z': 0.0})
         sim.setObjectLocation("REDCYLINDER",{'x': 600.0, 'y': 10.0, 'z': -600.0},{'x': 0.0, 'y': 0.0, 'z': 0.0})
-        
+        #Setobjectlocation not working
         time.sleep(1)
     
     elif detect_collision(perception):

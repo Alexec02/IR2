@@ -10,7 +10,7 @@ from world_test import move_yellow_to_corner, reset_if_needed
 from robobopy.Robobo import Robobo
 from robobosim.RoboboSim import RoboboSim
 
-DATASET_FILE = "world_model_dataset_rotation.csv"
+DATASET_FILE = "world_model_dataset_2.csv"
 #ACTIONS = [-90,-45,0,45,90] # i tried discretized using motors (really difficult), does the statement mean using sim.setRobotLocation()????
 
 
