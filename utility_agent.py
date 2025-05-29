@@ -17,7 +17,7 @@ from keras.src.legacy.saving import legacy_h5_format
 def sample_actions(n=5):
     actions = [np.array([np.random.uniform(0, 20), np.random.uniform(0, 20)]) for _ in range(n)]
     for _ in range(n//2):
-        speed = np.random.uniform(10, 30)
+        speed = np.random.uniform(10, 20)
         variation = np.random.uniform(-1, 1)
         actions.append(np.array([speed, speed + variation]))
 
@@ -56,8 +56,8 @@ def sample_actions(n=5):
     for _ in range(4):
         actions.append(np.array([np.random.uniform(0, 20), np.random.uniform(0, 20)]))
 
-    return actions"""
-
+    return actions
+"""
 def main_loop(sim, rob):
     # Load rotation_memory.csv
     data = pd.read_csv('rotation_memory.csv', on_bad_lines='skip')
@@ -153,7 +153,7 @@ def main_loop(sim, rob):
 
 
     # Load trained utility model
-    utility_model = legacy_h5_format.load_model_from_hdf5("utility_model2.h5", custom_objects={'mse': 'mse'})
+    utility_model = legacy_h5_format.load_model_from_hdf5("utility_model4.h5", custom_objects={'mse': 'mse'})
     # Load trained model
     model = legacy_h5_format.load_model_from_hdf5("model_rotation.h5", custom_objects={'mse': 'mse'})
 

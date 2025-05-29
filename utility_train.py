@@ -91,4 +91,4 @@ print("Predicción (utilidad):", pred)
 print("Real (utilidad):", y_test[1])
 
 # Guardar modelo
-model.save('utility_model3.h5')
+model.save('utility_model4.h5')

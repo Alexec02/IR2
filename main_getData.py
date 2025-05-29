@@ -40,8 +40,8 @@ def main_loop(sim,rob):
         #sign1=sign[random.randint(0,1)]
         #sign2=sign[random.randint(0,1)]
 
-        vel1 = random.random()*30#*sign1
-        vel2 = random.random()*30#*sign2
+        vel1 = random.random()*20#*sign1
+        vel2 = random.random()*20#*sign2
         action=[vel1,vel2]
         move(rob, vel1, vel2)
         
